@@ -15,3 +15,7 @@ curl -s "$API/check?parameter=copper&value=0.15&unit=mg/L&place=CA-QC&medium=wat
 curl -s "$API/sources?place=CA-QC"
 curl -s "$API/permits/PA0228061"
 curl -s "$API/designations?species=Myotis%20lucifugus&place=CA-ON"
+
+# HTTP POST: a lab table (up to 200 rows) or a species list (up to 500 names) in one call
+curl -s -X POST "$API/check" -H "content-type: application/json"   -d '{"place":"CA-QC","medium":"water_discharge","rows":[{"parameter":"copper","value":0.15,"unit":"mg/L"},{"parameter":"zinc","value":0.4,"unit":"mg/L"}]}'
+curl -s -X POST "$API/designations" -H "content-type: application/json"   -d '{"place":"CA-ON","species":["Myotis lucifugus","Emydoidea blandingii"]}'

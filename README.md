@@ -10,7 +10,7 @@ under the species-at-risk registers it holds.
 When nothing is held, the answer is a coded refusal naming every instrument searched, never an empty list.
 
 - MCP endpoint: `https://passage-data.com/mcp` (Streamable HTTP, no key)
-- HTTP API: `https://passage-data.com/api/v1/` (GET, JSON, no key)
+- HTTP API: `https://passage-data.com/api/v1/` (JSON, no key; GET, and POST for a table or a list)
 - Full reference for agents: [passage-data.com/llms.txt](https://passage-data.com/llms.txt) ·
   [OpenAPI 3.1](https://passage-data.com/openapi.json)
 - Registry name: `io.github.kedu21-beep/passage-data`
@@ -38,10 +38,15 @@ with the URL `https://passage-data.com/mcp`. No key or sign-in.
 |---|---|
 | `find_limits` | Numeric limits and guidelines for one substance or measure (a name or CAS number), optionally by place (ISO 3166: `US-OH`, `CA-QC`, `DE`, `EU`), medium, statistic and kind. A place also searches the places above it. |
 | `check_value` | Whether one measured value (with its unit) is over, under or within each row `find_limits` would return. Units convert exactly within a family; a row that cannot be compared says why (a hardness- or pH-dependent criterion, a narrative limit, a unit of another family). |
+| `check_values` | A lab table in one call: up to 200 rows of parameter, value and unit for one place, each answered by `check_value`, with each held limit sent once and a count of the rows over. A row that cannot be read (an unknown parameter, a value below detection such as `<0.005`) gets its own coded refusal. |
+| `verify_claim` | Whether a limit held says what a sentence says (an AI's answer, a report): `confirmed` with the row's `cite`, `contradicted` with the numbers held, or a refusal when nothing is held to judge it by. |
 | `list_sources` | Every instrument held for a place: title, issuer, edition, what it governs, rows read, source URL and sha256. |
 | `get_permit` | One US NPDES discharge permit from EPA's national file: limits by outfall, renewal due date, the last 12 months' values over a limit. |
 | `find_designations` | The status a species holds under each register held: US ESA, SARA and COSEWIC, provincial and territorial acts, IUCN Red List, CITES, CMS, EU Habitats and Birds Directives, UK schedules. Each cited to the line the register prints. |
+| `screen_species` | A species list in one call: up to 500 names for one place or everywhere, each answered by `find_designations`, with each register sent once and the registers that are silent on a name. |
 | `map_to_darwin_core` | The Darwin Core term each column of a species occurrence or checklist file maps to, the rule that decided it, and the GBIF-required terms no column carries. |
+| `search` | Free-text search over everything held (a substance and a place, a species, an instrument's title, an NPDES permit number), returning ids for `fetch`. |
+| `fetch` | One document `search` returned, as text: every cited row for a parameter in a place, what each register says about a species, or what is held for a place. |
 
 All tools are read-only and idempotent.
 
@@ -59,6 +64,13 @@ or over plain HTTP:
 curl -s "https://passage-data.com/api/v1/limits?parameter=ammonia&place=US-OH&medium=surface_water"
 ```
 
+A lab table or a species list goes in one POST:
+
+```bash
+curl -s -X POST https://passage-data.com/api/v1/check -H "content-type: application/json"   -d '{"place":"CA-QC","medium":"water_discharge","rows":[{"parameter":"copper","value":0.15,"unit":"mg/L"},{"parameter":"zinc","value":0.4,"unit":"mg/L"}]}'
+curl -s -X POST https://passage-data.com/api/v1/designations -H "content-type: application/json"   -d '{"place":"CA-ON","species":["Myotis lucifugus","Emydoidea blandingii"]}'
+```
+
 Each row carries `value`, `unit`, `statistic`, `direction`, `kind`, `medium`, `place`, `conditions` as printed, and a
 `cite` block (`instrument`, `title`, `issuer`, `edition`, `section`, `page`, `quote`, `source_url`, `source_sha256`).
 More in [`examples/`](examples/).
@@ -66,7 +78,7 @@ More in [`examples/`](examples/).
 ## What is held
 
 The live counts are on the service card: [passage-data.com/api/v1/](https://passage-data.com/api/v1/) (`held`).
-On 2026-10-14 the card said 246 instruments, 91,513 rows, 5,903 parameters and 75 places, plus 34 species registers
+On 2026-10-14 the card said 247 instruments, 98,587 rows, 5,910 parameters and 74 places, plus 34 species registers
 holding 213,742 entries.
 
 ## Terms
